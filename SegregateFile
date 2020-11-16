@@ -1,0 +1,29 @@
+#This program was written to take a dump of files that had roll numbers in their file name (but not in any order). 
+#The files had to be segragated into a set of preset folders. The mapping of file to folder was maintained in a mapping file
+
+# get working directory and store it
+mypath <- getwd()
+
+#List all the docx files in the folder
+file_names <- list.files(paste0(mypath,"/Midterm/"), pattern="*.docx", full.names=TRUE)
+
+#Read the list of students and sections into a data frame
+RefList <- read.table(paste0(mypath,"/SectionList.txt"), sep=",",
+                      col.names=c("Student", "Section"))
+
+
+#Read one file name at a time, look for roll no and move to relevant section
+for (i in 1:NROW(file_names))
+{
+  for(j in 1:nrow(RefList))
+  {
+    if(grepl(RefList$Student[j], file_names[i]))
+    {
+      output_file <- paste0(mypath,"/",RefList$Section[j],"/",RefList$Student[j],".docx")
+      file.copy(from = file_names[i], to = output_file)
+      file.remove(file_names[i])
+      break
+    }
+  }
+}
+#When program ends, all files should get segregated into sections as per Section List
