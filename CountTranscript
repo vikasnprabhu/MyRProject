@@ -1,0 +1,51 @@
+#Program to read a chat transcript and do a word count of the chat participants. Needs a reference list of participants
+#Once word count is done, it scores the participants based on a median value. All above median get 1, below get 0
+
+# get working directory and store it
+mypath <- getwd()
+
+# read the list of student IDs into a data frame
+RefList <- read.table(paste0(mypath,"/ReflistA.csv"), sep=",",
+                      col.names=c("Student", "Count"))
+
+# open transcript file for reading
+ChatFile <- file(paste0(mypath,"/transcriptA.txt"), open="r")
+
+# read first line from the transcript
+ChatLine <- readLines(ChatFile, n=1)
+LineLen <- length(ChatLine)
+
+# loop to analyze one transcript line at a time
+while (LineLen > 0)
+{
+  # take each student ID and search in that line, and update count
+  for(i in 1:nrow(RefList))
+  {
+    if(grepl(RefList$Student[i], ChatLine)) 
+    {
+      RefList$Count[i] <- RefList$Count[i] + lengths(strsplit(ChatLine, " "))
+    }
+  }
+  
+  # read next line from the transcript
+  ChatLine <- readLines(ChatFile, n=1)
+  LineLen <- length(ChatLine)
+}
+
+# Adding a score column to RefList to do scoring of counts
+Scores <- numeric(nrow(RefList))
+RefList <- cbind(RefList, Score=Scores)
+
+# Calculate MaxScore as avg of top three counts
+#MaxScore <- mean(RefList$Count[rank(-RefList$Count, ties.method="first") < 4])
+
+# Take mean value of score distribution
+MeanScore <- mean(RefList$Count)
+
+# Grade scores based on MeanScore
+RefList$Score[RefList$Count < MeanScore] <- 0
+RefList$Score[RefList$Count > MeanScore] <- 1
+
+# write RefList back to the CSV file
+write.table(RefList, file=paste(mypath,"/ReflistAO.csv",sep=""), sep=",")
+close.connection(ChatFile)
