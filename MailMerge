@@ -1,0 +1,54 @@
+# Program to send email in mail merge format. Email uses RDCOMClient library and connects with Outlook
+# Outlook has to be installed and configured to the email ID that will be used to send email. No SMTP details needed
+
+library(RDCOMClient)
+# Initialize API
+OutApp <- COMCreate("Outlook.Application")
+
+# Get working directory and store it
+mypath <- getwd()
+
+# I use this program to send emails to students. A csv is needed containing roll no., name, email ID
+# Read the list of mail IDs into a data frame
+RefList <- read.table(paste0(mypath,"/EmailIDst.csv"), sep=",",
+                      col.names=c("Roll", "Name", "Email"))
+
+# A counter that runs through the file
+i <- as.integer(1)
+
+# I do not want to burden my server with all emails at once, so I allow user input
+# that can dictate how many mails to send in a batch. I typically enter 5 here
+RunCount <- as.integer(readline("Enter initial number to process: "))
+
+# The program sends out the specified batch and then waits for the next input
+# Program will iteratre sending mails until user input is zero or the file runs out of entries
+while (RunCount>0)
+{
+  for (j in 1:RunCount)
+  {
+    # Create an email 
+    outMail = OutApp$CreateItem(0)
+    
+    # Build the email components based on what is read from the file
+    outMail[["To"]] = RefList$Email[i]
+    outMail[["subject"]] = "Your C&S MidTerm Evaluation"
+    Greeting <- paste0("Hello ",RefList$Name[i],",")
+    Bodyline <- "Please find attached the evaluation of your MidTerm submission"
+    Signoff <- "Thanks and Regards, Vikas (Class TA)"
+    outMail[["body"]] = paste(Greeting, Bodyline, Signoff, sep="\n\n")
+    
+    # Even attachments are customised to each email
+    outMail[["Attachments"]]$Add(paste0(mypath,"/",RefList$Roll[i],".docx"))
+    
+    ## Send the email                     
+    outMail$Send()
+    # Increment counter to move to next student
+    i <- i+1
+  }
+  
+  #Accept input to continue with next set
+  RunCount <- as.integer(readline("Enter next numbers to process: "))
+}
+
+
+#Mail sent to everyone in the RefList file
